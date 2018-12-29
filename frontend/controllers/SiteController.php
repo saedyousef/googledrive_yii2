@@ -26,7 +26,7 @@ class SiteController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::className(),
-                'only' => ['logout', 'signup'],
+                'only' => ['logout', 'signup', 'saed'],
                 'rules' => [
                     [
                         'actions' => ['signup'],
@@ -37,6 +37,11 @@ class SiteController extends Controller
                         'actions' => ['logout'],
                         'allow' => true,
                         'roles' => ['@'],
+                    ],
+                    [
+                        'actions' => ['saed'],
+                        'allow' => true,
+                        'roles' => ['?'],
                     ],
                 ],
             ],
@@ -210,6 +215,131 @@ class SiteController extends Controller
 
         return $this->render('resetPassword', [
             'model' => $model,
+        ]);
+    }
+
+
+    public function actionDriveurl()
+    {
+        $response = Yii::$app->GoogleApiComponent->authenticateClient();
+        if(!$response['authUrl'])
+        {
+            $files = $response['files'];
+            $filesResponse = [];
+            foreach ($files->items as $key => $file) {
+                $filesResponse[$key] = $file;
+            }
+
+            $data = [];
+            
+            foreach ($filesResponse as $index => $value) {
+                if(isset($value['title']))
+                    $data[$index]['title'] = $value['title'];
+                else
+                    $data[$index]['title'] = '-';
+                
+                if(isset($value['thumbnailLink']))
+                    $data[$index]['thumbnailLink'] = $value['thumbnailLink'];
+                else
+                    $data[$index]['thumbnailLink'] = '-';
+                
+                if(isset($value['embedLink']))
+                    $data[$index]['embedLink'] = $value['embedLink'];
+                else
+                    $data[$index]['embedLink'] = '-';
+
+                if(isset($value['modifiedDate']))
+                    $data[$index]['modifiedDate'] = $value['modifiedDate'];
+                else
+                    $data[$index]['modifiedDate'] = '-';
+
+                if(isset($value['fileSize'])){
+                    if($value['fileSize'] > 0)
+                        $data[$index]['fileSize'] = round($value['fileSize'] / 1000000, 3) . 'MB';
+                }
+                else
+                    $data[$index]['fileSize'] = '-';
+                
+                if(isset($value['ownerNames']) && count($value['ownerNames']) > 0)
+                    $data[$index]['ownerNames'] = implode(' ,', $value['ownerNames']);
+                else
+                    $data[$index]['ownerNames'] = '-';
+            }
+
+            return $this->render('files', [
+                'files' => json_encode($data),
+            ]);
+         
+        }
+        return $this->redirect($response['authUrl']);
+    }
+
+    public function actionCallback()
+    {
+        $request = Yii::$app->request;
+        $code = $request->get('code');
+        if(empty($code))
+            $code = null;
+        
+        if(!empty($_SESSION['access_token']))
+            $access_token = $_SESSION['access_token'];
+        else
+            $access_token = null;
+        $response = Yii::$app->GoogleApiComponent->retrieveAllFiles($code, $access_token);
+        if(!$response['authUrl'])
+        {
+            $files = $response['files'];
+            $filesResponse = [];
+            foreach ($files->items as $key => $file) {
+                $filesResponse[$key] = $file;
+            }
+
+            $data = [];
+            
+            foreach ($filesResponse as $index => $value) {
+                if(isset($value['title']))
+                    $data[$index]['title'] = $value['title'];
+                else
+                    $data[$index]['title'] = '-';
+                
+                if(isset($value['thumbnailLink']))
+                    $data[$index]['thumbnailLink'] = $value['thumbnailLink'];
+                else
+                    $data[$index]['thumbnailLink'] = '-';
+                
+                if(isset($value['embedLink']))
+                    $data[$index]['embedLink'] = $value['embedLink'];
+                else
+                    $data[$index]['embedLink'] = '-';
+
+                if(isset($value['modifiedDate']))
+                    $data[$index]['modifiedDate'] = $value['modifiedDate'];
+                else
+                    $data[$index]['modifiedDate'] = '-';
+
+                if(isset($value['fileSize'])){
+                    if($value['fileSize'] > 0)
+                        $data[$index]['fileSize'] = round($value['fileSize'] / 1000000, 3) . 'MB';
+                }
+                else
+                    $data[$index]['fileSize'] = '-';
+                
+                if(isset($value['ownerNames']) && count($value['ownerNames']) > 0)
+                    $data[$index]['ownerNames'] = implode(' ,', $value['ownerNames']);
+                else
+                    $data[$index]['ownerNames'] = '-';
+            }
+            return $this->render('files', [
+                'files' => json_encode($data),
+            ]);
+        }
+        return $this->redirect($response['authUrl']);
+    }
+
+    public function actionFiles($files = null)
+    {
+        return $this->render('files', [
+            'files' => $files,
         ]);
     }
 }
