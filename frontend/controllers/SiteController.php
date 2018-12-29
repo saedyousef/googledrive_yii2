@@ -26,7 +26,7 @@ class SiteController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::className(),
-                'only' => ['logout', 'signup'],
+                'only' => ['logout', 'signup', 'saed'],
                 'rules' => [
                     [
                         'actions' => ['signup'],
@@ -37,6 +37,11 @@ class SiteController extends Controller
                         'actions' => ['logout'],
                         'allow' => true,
                         'roles' => ['@'],
+                    ],
+                    [
+                        'actions' => ['saed'],
+                        'allow' => true,
+                        'roles' => ['?'],
                     ],
                 ],
             ],
@@ -211,5 +216,52 @@ class SiteController extends Controller
         return $this->render('resetPassword', [
             'model' => $model,
         ]);
+    }
+
+
+    public function actionDriveurl()
+    {
+        $response = Yii::$app->GoogleApiComponent->authenticateClient();
+        if(!$response['authUrl'])
+        {
+            $files = $response['files'];
+            $array = [];
+            foreach ($files->items as $key => $file) {
+                $array[] = $file;
+            }
+            //print_r($files->items);die;
+            print_r($array);die;
+        }
+        return $this->redirect($response['authUrl']);
+    }
+
+    public function actionCallback()
+    {
+        $request = Yii::$app->request;
+        $code = $request->get('code');
+        if(empty($code))
+            $code = null;
+        
+        if(!empty($_SESSION['access_token']))
+            $access_token = $_SESSION['access_token'];
+        else
+            $access_token = null;
+        $response = Yii::$app->GoogleApiComponent->retrieveAllFiles($code, $access_token);
+        if(!$response['authUrl'])
+        {
+            $files = $response['files'];
+        }
+        return $this->redirect($response['authUrl']);
+    }
+
+    public function actionFiles()
+    {
+        $response = Yii::$app->GoogleApiComponent->authenticateClient();
+        if(!$response['authUrl'])
+        {
+            $files = $response['files'];
+            print_r($files);die;
+        }
+        return $this->redirect($response['authUrl']);
     }
 }
