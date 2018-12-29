@@ -14,6 +14,7 @@ class GoogleApiComponent extends Component {
 	{
 		if (session_status() == PHP_SESSION_NONE) {
 		    session_start();
+		    $_SESSION['expire_date'] = date("Y-m-d H:i:s", strtotime("+55 minutes"));
 		}
 
 		$credentials = Yii::getAlias('@common'). '/credentials.json';
@@ -25,7 +26,7 @@ class GoogleApiComponent extends Component {
 		//$client->setRedirectUri($redirect_uri);
 		$client->addScope(\Google_Service_Drive::DRIVE);
 
-		if (isset($_SESSION['access_token']) && $_SESSION['access_token']) {
+		if (isset($_SESSION['access_token']) && $_SESSION['access_token'] && (date('Y-m-d H:i:s') >  $_SESSION['expire_date'])) {
 		  $client->setAccessToken($_SESSION['access_token']);
 		  $drive = new \Google_Service_Drive($client);
 		  $files = $drive->files->listFiles([]);
@@ -56,6 +57,11 @@ class GoogleApiComponent extends Component {
 			if(!empty($code) && empty($access_token))
 			{
 				$auth = $client->authenticate($code);
+				if(isset($auth['error']))
+				{
+					$auth_url = $client->createAuthUrl();
+		  			return ['authUrl' => $auth_url];
+				}
 				$_SESSION['access_token'] = $client->getAccessToken();
 				$client->setAccessToken($client->getAccessToken());
 			}else

@@ -225,12 +225,51 @@ class SiteController extends Controller
         if(!$response['authUrl'])
         {
             $files = $response['files'];
-            $array = [];
+            $filesResponse = [];
             foreach ($files->items as $key => $file) {
-                $array[] = $file;
+                $filesResponse[$key] = $file;
             }
-            //print_r($files->items);die;
-            print_r($array);die;
+
+            $data = [];
+            
+            foreach ($filesResponse as $index => $value) {
+                if(isset($value['title']))
+                    $data[$index]['title'] = $value['title'];
+                else
+                    $data[$index]['title'] = '-';
+                
+                if(isset($value['thumbnailLink']))
+                    $data[$index]['thumbnailLink'] = $value['thumbnailLink'];
+                else
+                    $data[$index]['thumbnailLink'] = '-';
+                
+                if(isset($value['embedLink']))
+                    $data[$index]['embedLink'] = $value['embedLink'];
+                else
+                    $data[$index]['embedLink'] = '-';
+
+                if(isset($value['modifiedDate']))
+                    $data[$index]['modifiedDate'] = $value['modifiedDate'];
+                else
+                    $data[$index]['modifiedDate'] = '-';
+
+                if(isset($value['fileSize'])){
+                    if($value['fileSize'] > 0)
+                        $data[$index]['fileSize'] = round($value['fileSize'] / 1000000, 3) . 'MB';
+                }
+                else
+                    $data[$index]['fileSize'] = '-';
+                
+                if(isset($value['ownerNames']) && count($value['ownerNames']) > 0)
+                    $data[$index]['ownerNames'] = implode(' ,', $value['ownerNames']);
+                else
+                    $data[$index]['ownerNames'] = '-';
+            }
+
+            return $this->render('files', [
+                'files' => json_encode($data),
+            ]);
+         
         }
         return $this->redirect($response['authUrl']);
     }
@@ -250,18 +289,57 @@ class SiteController extends Controller
         if(!$response['authUrl'])
         {
             $files = $response['files'];
+            $filesResponse = [];
+            foreach ($files->items as $key => $file) {
+                $filesResponse[$key] = $file;
+            }
+
+            $data = [];
+            
+            foreach ($filesResponse as $index => $value) {
+                if(isset($value['title']))
+                    $data[$index]['title'] = $value['title'];
+                else
+                    $data[$index]['title'] = '-';
+                
+                if(isset($value['thumbnailLink']))
+                    $data[$index]['thumbnailLink'] = $value['thumbnailLink'];
+                else
+                    $data[$index]['thumbnailLink'] = '-';
+                
+                if(isset($value['embedLink']))
+                    $data[$index]['embedLink'] = $value['embedLink'];
+                else
+                    $data[$index]['embedLink'] = '-';
+
+                if(isset($value['modifiedDate']))
+                    $data[$index]['modifiedDate'] = $value['modifiedDate'];
+                else
+                    $data[$index]['modifiedDate'] = '-';
+
+                if(isset($value['fileSize'])){
+                    if($value['fileSize'] > 0)
+                        $data[$index]['fileSize'] = round($value['fileSize'] / 1000000, 3) . 'MB';
+                }
+                else
+                    $data[$index]['fileSize'] = '-';
+                
+                if(isset($value['ownerNames']) && count($value['ownerNames']) > 0)
+                    $data[$index]['ownerNames'] = implode(' ,', $value['ownerNames']);
+                else
+                    $data[$index]['ownerNames'] = '-';
+            }
+            return $this->render('files', [
+                'files' => json_encode($data),
+            ]);
         }
         return $this->redirect($response['authUrl']);
     }
 
-    public function actionFiles()
+    public function actionFiles($files = null)
     {
-        $response = Yii::$app->GoogleApiComponent->authenticateClient();
-        if(!$response['authUrl'])
-        {
-            $files = $response['files'];
-            print_r($files);die;
-        }
-        return $this->redirect($response['authUrl']);
+        return $this->render('files', [
+            'files' => $files,
+        ]);
     }
 }
