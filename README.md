@@ -2,7 +2,19 @@
 
 ## Install the googleapi sdk in your project
 ``composer install``
+## Change the API call version at this file
+``` /path/to/project/vendor/google/apiclient-services/src/Google/Service/Drive.php, _constructor```
 
+from
+```
+$this->servicePath = 'drive/v3/';
+$this->version = 'v3';
+```
+to 
+```
+$this->servicePath = 'drive/v2/';
+$this->version = 'v2';
+```
 Then you need to change the default nginx block to 
 ```
 server {
