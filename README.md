@@ -59,5 +59,5 @@ server {
         }
     }
 ```
-## Reload nginx, open your browser and got to 
+## Reload nginx, open your browser and go to 
 ``http://localhost/site/driveurl ``
