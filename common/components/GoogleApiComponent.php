@@ -10,10 +10,19 @@ class GoogleApiComponent extends Component {
 
 	
 
+	/**
+	* This action will authenticate user with Google for the very first time
+	*
+	* @author Saed Yousef 
+	* @param $code <Return from google APIs>
+	* @return strin/array|mixed
+	*/
 	public function authenticateClient($code = null)
 	{
 		if (session_status() == PHP_SESSION_NONE) {
 		    session_start();
+
+		    // Set the expiration date of the access token returned from Google APIs
 		    $_SESSION['expire_date'] = date("Y-m-d H:i:s", strtotime("+55 minutes"));
 		}
 
@@ -23,20 +32,33 @@ class GoogleApiComponent extends Component {
 		$client->setApplicationName("Syarah Task");
 		$client->setAccessType('offline');
 		$redirect_uri = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'];
-		//$client->setRedirectUri($redirect_uri);
+		
 		$client->addScope(\Google_Service_Drive::DRIVE);
 
-		if (isset($_SESSION['access_token']) && $_SESSION['access_token'] && (date('Y-m-d H:i:s') >  $_SESSION['expire_date'])) {
+		// If there aready non expired token reuse it
+		if (isset($_SESSION['access_token']) && (date('Y-m-d H:i:s') < $_SESSION['expire_date'])) {
 		  $client->setAccessToken($_SESSION['access_token']);
 		  $drive = new \Google_Service_Drive($client);
 		  $files = $drive->files->listFiles([]);
 		  return ['files' => $files, 'authUrl' => false];
 		}
 
+		// Reset the expiration date of the access token
+		if(date('Y-m-d H:i:s') < $_SESSION['expire_date'])
+			$_SESSION['expire_date'] = date("Y-m-d H:i:s", strtotime("+55 minutes"));
+		
 		$authUrl = $client->createAuthUrl();
 		return ['authUrl' => $authUrl];
 	}
 
+	/**
+	* This action will use the access_token/code already generate by Google APIs
+	*
+	* @author Saed Yousef 
+	* @param $code
+	* @param $access_token
+	* @return url/array|mixed
+	*/
 	public function retrieveAllFiles($code = null, $access_token = null)
 	{
 		$credentials = Yii::getAlias('@common'). '/credentials.json';

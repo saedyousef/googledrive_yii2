@@ -18,6 +18,8 @@ use yii\helpers\Html;
  		<th scope="col">FileSize</th>
  		<th scope="col">ownerNames</th>
  		<?php 
+ 		if(empty($files))
+ 			echo "No data found";exit();
  		$data = json_decode($files, true);
  		foreach($data as $key => $value){?>
  			<tr>

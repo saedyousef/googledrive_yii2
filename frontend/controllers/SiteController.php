@@ -219,61 +219,39 @@ class SiteController extends Controller
     }
 
 
+    /**
+    * This action will authenticate the user via OAuth Google Drive APIs
+    *
+    * @author Saed Yousef <saed.alzaben@gmail.com>
+    *
+    * @param code <Optional>
+    * @param access_token <Optional>
+    * @return string|mixed
+    */
     public function actionDriveurl()
     {
         $response = Yii::$app->GoogleApiComponent->authenticateClient();
         if(!$response['authUrl'])
         {
-            $files = $response['files'];
-            $filesResponse = [];
-            foreach ($files->items as $key => $file) {
-                $filesResponse[$key] = $file;
-            }
-
-            $data = [];
-            
-            foreach ($filesResponse as $index => $value) {
-                if(isset($value['title']))
-                    $data[$index]['title'] = $value['title'];
-                else
-                    $data[$index]['title'] = '-';
-                
-                if(isset($value['thumbnailLink']))
-                    $data[$index]['thumbnailLink'] = $value['thumbnailLink'];
-                else
-                    $data[$index]['thumbnailLink'] = '-';
-                
-                if(isset($value['embedLink']))
-                    $data[$index]['embedLink'] = $value['embedLink'];
-                else
-                    $data[$index]['embedLink'] = '-';
-
-                if(isset($value['modifiedDate']))
-                    $data[$index]['modifiedDate'] = $value['modifiedDate'];
-                else
-                    $data[$index]['modifiedDate'] = '-';
-
-                if(isset($value['fileSize'])){
-                    if($value['fileSize'] > 0)
-                        $data[$index]['fileSize'] = round($value['fileSize'] / 1000000, 3) . 'MB';
-                }
-                else
-                    $data[$index]['fileSize'] = '-';
-                
-                if(isset($value['ownerNames']) && count($value['ownerNames']) > 0)
-                    $data[$index]['ownerNames'] = implode(' ,', $value['ownerNames']);
-                else
-                    $data[$index]['ownerNames'] = '-';
-            }
+            $data = $this->reformatResponse($response);
 
             return $this->render('files', [
                 'files' => json_encode($data),
             ]);
-         
         }
+
         return $this->redirect($response['authUrl']);
     }
 
+    /**
+    * This action is the callback for the Google Drive APIs to return the access_token/code
+    *
+    * @author Saed Yousef <saed.alzaben@gmail.com>
+    *
+    * @param code <Optional>
+    * @param access_token <Optional>
+    * @return string|mixed
+    */
     public function actionCallback()
     {
         $request = Yii::$app->request;
@@ -288,47 +266,8 @@ class SiteController extends Controller
         $response = Yii::$app->GoogleApiComponent->retrieveAllFiles($code, $access_token);
         if(!$response['authUrl'])
         {
-            $files = $response['files'];
-            $filesResponse = [];
-            foreach ($files->items as $key => $file) {
-                $filesResponse[$key] = $file;
-            }
+            $data = $this->reformatResponse($response);
 
-            $data = [];
-            
-            foreach ($filesResponse as $index => $value) {
-                if(isset($value['title']))
-                    $data[$index]['title'] = $value['title'];
-                else
-                    $data[$index]['title'] = '-';
-                
-                if(isset($value['thumbnailLink']))
-                    $data[$index]['thumbnailLink'] = $value['thumbnailLink'];
-                else
-                    $data[$index]['thumbnailLink'] = '-';
-                
-                if(isset($value['embedLink']))
-                    $data[$index]['embedLink'] = $value['embedLink'];
-                else
-                    $data[$index]['embedLink'] = '-';
-
-                if(isset($value['modifiedDate']))
-                    $data[$index]['modifiedDate'] = $value['modifiedDate'];
-                else
-                    $data[$index]['modifiedDate'] = '-';
-
-                if(isset($value['fileSize'])){
-                    if($value['fileSize'] > 0)
-                        $data[$index]['fileSize'] = round($value['fileSize'] / 1000000, 3) . 'MB';
-                }
-                else
-                    $data[$index]['fileSize'] = '-';
-                
-                if(isset($value['ownerNames']) && count($value['ownerNames']) > 0)
-                    $data[$index]['ownerNames'] = implode(' ,', $value['ownerNames']);
-                else
-                    $data[$index]['ownerNames'] = '-';
-            }
             return $this->render('files', [
                 'files' => json_encode($data),
             ]);
@@ -336,10 +275,74 @@ class SiteController extends Controller
         return $this->redirect($response['authUrl']);
     }
 
+    /**
+    * This action will draw the json response return from Google Drive APIs
+    *
+    * @author Saed Yousef <saed.alzaben@gmail.com>
+    * @param $files <JSON> 
+    * @return view
+    */
     public function actionFiles($files = null)
     {
         return $this->render('files', [
             'files' => $files,
         ]);
+    }
+
+    /**
+    * This action will restructure the response from Google Drive APIs
+    *
+    * @author Saed Yousef <saed.alzaben@gmail.com>
+    * @param $response <Array> object
+    * @return array
+    */
+    protected function reformatResponse($response)
+    {
+        if(empty($response['files']))
+            return null;
+
+        $files = $response['files'];
+        $filesResponse = [];
+        foreach ($files->items as $key => $file) {
+            $filesResponse[$key] = $file;
+        }
+
+        $data = [];
+        
+        foreach ($filesResponse as $index => $value) {
+            if(isset($value['title']))
+                $data[$index]['title'] = $value['title'];
+            else
+                $data[$index]['title'] = '-';
+            
+            if(isset($value['thumbnailLink']))
+                $data[$index]['thumbnailLink'] = $value['thumbnailLink'];
+            else
+                $data[$index]['thumbnailLink'] = '#';
+            
+            if(isset($value['embedLink']))
+                $data[$index]['embedLink'] = $value['embedLink'];
+            else
+                $data[$index]['embedLink'] = '#';
+
+            if(isset($value['modifiedDate']))
+                $data[$index]['modifiedDate'] = $value['modifiedDate'];
+            else
+                $data[$index]['modifiedDate'] = '-';
+
+            if(isset($value['fileSize'])){
+                if($value['fileSize'] > 0)
+                    $data[$index]['fileSize'] = round($value['fileSize'] / 1000000, 3) . 'MB';
+            }
+            else
+                $data[$index]['fileSize'] = '-';
+            
+            if(isset($value['ownerNames']) && count($value['ownerNames']) > 0)
+                $data[$index]['ownerNames'] = implode(' ,', $value['ownerNames']);
+            else
+                $data[$index]['ownerNames'] = '-';
+        }
+
+        return $data;
     }
 }
